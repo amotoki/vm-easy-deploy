@@ -1,5 +1,7 @@
 #!/bin/sh
 
+IMAGE_DIR=/var/lib/libvirt/images
+
 export LANG=C
 export LC_ALL=C
 
@@ -20,4 +22,4 @@ if [ $? -eq 0 ]; then
 fi
 
 virsh undefine $NAME
-rm -v /var/lib/libvirt/images/${NAME}.img
+rm -v ${IMAGE_DIR}/${NAME}.img

@@ -9,12 +9,14 @@ import shutil
 import getpass
 import tempfile
 
-DEFAULT_TEMPLATE = '/usr/local/share/libvirt/templates/ubuntu.xml'
+BASEDIR = '/usr/local/share/libvirt'
+IMAGE_DIR = '/var/lib/libvirt/images'
+
+DEFAULT_TEMPLATE = '%s/%s' % (BASEDIR, 'templates/libvirt.xml')
 DEFAULT_MEMORY = 2 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
-IMAGE_DIR = '/var/lib/libvirt/images'
-BASEIMAGE_DIR = '/usr/local/share/libvirt/images'
-CMD_SET_VMNAME= '/usr/local/share/libvirt/set-vm-name.sh'
+BASEIMAGE_DIR = '%s/%s' % (BASEDIR, 'images')
+CMD_SET_VMNAME= '%s/%s' % (BASEDIR, 'set-vm-name.sh')
 
 def usage():
     print "Usage: %s name template" % sys.argv[0]
@@ -89,7 +91,7 @@ def defineDomain(xml):
 def listImages():
     #print "ubuntu1204.img"
     #print "ubuntu1104.img"
-    for f in os.listdir('/usr/local/share/libvirt/images'):
+    for f in os.listdir(BASEIMAGE_DIR):
         print f
 
 def parseArgs():
