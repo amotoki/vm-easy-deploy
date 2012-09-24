@@ -1,22 +1,30 @@
 #!/usr/bin/env python
 import argparse
-from jinja2 import Template
-from virtinst.util import randomMAC
-import sys
-import os
-import subprocess
-import shutil
 import getpass
+from jinja2 import Template
+import json
+import os
+import shutil
+import sys
+import subprocess
 import tempfile
+from virtinst.util import randomMAC
 
 BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
 
-DEFAULT_TEMPLATE = '%s/%s' % (BASEDIR, 'templates/libvirt.xml')
+# bridge interface directly connected to the Internet (or your intranet)
+PUBLIC_BRIDGE = 'br0'
+# mac address list of public hosts
+PUBLIC_MAC_FILE = os.path.join(BASEDIR, 'mac.json')
+
+DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
-BASEIMAGE_DIR = '%s/%s' % (BASEDIR, 'images')
-CMD_SET_VMNAME= '%s/%s' % (BASEDIR, 'set-vm-name.sh')
+BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
+CMD_SET_VMNAME= os.path.join(BASEDIR, 'set-vm-name.sh')
+
+mac_dict = {}
 
 def usage():
     print "Usage: %s name template" % sys.argv[0]
@@ -111,6 +119,23 @@ def parseArgs():
 
     return args
 
+def loadMacAddress():
+    global mac_dict
+    if os.path.exists(PUBLIC_MAC_FILE):
+        with open(PUBLIC_MAC_FILE) as f:
+            mac_dict = json.load(f)
+
+def getMacAddress(nic, name):
+    global mac_dict
+    print '%s exists => %s' % (PUBLIC_MAC_FILE, os.path.exists(PUBLIC_MAC_FILE))
+    print 'name in mac_dict %s' % (name in mac_dict)
+    if (nic == PUBLIC_BRIDGE and
+        os.path.exists(PUBLIC_MAC_FILE) and name in mac_dict):
+        mac = mac_dict[name]
+    else:
+      mac = randomMAC("qemu")
+    return mac
+
 def generateLibvirtXML(args, libvirt_xml):
     params = { 'name': args.NAME,
                'memory': args.memory,
@@ -119,7 +144,7 @@ def generateLibvirtXML(args, libvirt_xml):
     if len(args.nic) == 0:
         args.nic.append('NAT')
     for i, nic in enumerate(args.nic):
-        mac = randomMAC("qemu")
+        mac = getMacAddress(nic, args.NAME)
         slot = '0x%02x' % (BASE_SLOT + i)
         params['nics'].append({'nic': nic, 'mac': mac, 'slot': slot})
     
@@ -129,7 +154,7 @@ def generateLibvirtXML(args, libvirt_xml):
     with open(libvirt_xml, 'w') as f:
         f.write(tmpl.render(params))
     
-    print "%s generated successfully from %s" % (libvirt_xml, args.template)
+    #print "%s generated successfully from %s" % (libvirt_xml, args.template)
     for m in params['nics']:
         print "%s: %s" % (m['nic'], m['mac'])
 
@@ -144,6 +169,7 @@ def deleteLibvirtXML(libvirt_xml):
 #------------------------------------------------------------
 
 checkUser()
+loadMacAddress()
 
 args = parseArgs()
 
