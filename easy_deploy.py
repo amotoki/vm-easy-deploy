@@ -13,7 +13,7 @@ BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
 
 DEFAULT_TEMPLATE = '%s/%s' % (BASEDIR, 'templates/libvirt.xml')
-DEFAULT_MEMORY = 2 * 1024 * 1024 # KB
+DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = '%s/%s' % (BASEDIR, 'images')
 CMD_SET_VMNAME= '%s/%s' % (BASEDIR, 'set-vm-name.sh')
