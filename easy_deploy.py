@@ -36,19 +36,10 @@ def checkUser():
         sys.exit(1)
 
 def checkDomain(name):
-    subproc_args = { 'stdin': subprocess.PIPE,
-                     'stdout': subprocess.PIPE,
-                     'stderr': subprocess.PIPE,
-                     'close_fds': True, }
-    cmd = 'virsh domstate %s' % name
-    args = cmd.split()
-    p = subprocess.Popen(args, **subproc_args)
-    ret = p.wait()
+    ret = callVirshCmd('domstate', name, suppress=True)
     if ret == 0:
         print "%s is already defined." % name
         sys.exit(2)
-    p.stdout.read()
-    p.stderr.read()
 
 def checkImage(image):
     image_path = os.path.join(IMAGE_DIR, image)
@@ -83,18 +74,30 @@ def setHostnameToImage(image, name):
         sys.exit(5)
 
 def defineDomain(xml):
+    ret = callVirshCmd('define', xml)
+    if ret:
+        sys.exit(4)
+
+def startDomain(name):
+    ret = callVirshCmd('start', name)
+    if ret:
+        sys.exit(6)
+
+def callVirshCmd(*args, **kwargs):
+    suppress = kwargs.get('suppress')
     subproc_args = { 'stdin': subprocess.PIPE,
                      'stdout': subprocess.PIPE,
                      'stderr': subprocess.PIPE,
                      'close_fds': True, }
-    cmd = 'virsh define %s' % xml
-    args = cmd.split()
+    args = ('virsh',) + args
     p = subprocess.Popen(args, **subproc_args)
     ret = p.wait()
-    if ret:
-        print p.stdout.read()
-        print p.stderr.read()
-        sys.exit(4)
+    stdout = p.stdout.read()
+    stderr = p.stderr.read()
+    if ret and not suppress:
+        print stdout
+        print stderr
+    return ret
 
 def listImages():
     #print "ubuntu1204.img"
@@ -107,6 +110,7 @@ def parseArgs():
     parser.add_argument('NAME', help='VM name to be defined')
     parser.add_argument('BASEIMAGE', help='baseimage name or LIST (which lists available baseimages)')
     parser.add_argument('-t', '--template', help='template file', default=DEFAULT_TEMPLATE)
+    parser.add_argument('--nostart', action='store_true', help='Do not start after define')
     parser.add_argument('-m', '--memory', help='memory size [KB]', default=DEFAULT_MEMORY)
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
@@ -187,3 +191,6 @@ defineDomain(libvirt_xml)
 copyImage(base_path, dest_path)
 setHostnameToImage(dest_path, args.NAME)
 deleteLibvirtXML(libvirt_xml)
+
+if not args.nostart:
+    startDomain(args.NAME)
