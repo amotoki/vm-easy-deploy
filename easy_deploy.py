@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import tempfile
+from virtinst import util as virtutils
 from virtinst.util import randomMAC
 
 BASEDIR = '/usr/local/share/libvirt'
@@ -129,6 +130,9 @@ def loadMacAddress():
         with open(PUBLIC_MAC_FILE) as f:
             mac_dict = json.load(f)
 
+def randomMAC():
+    return virtutils.randomMAC("qemu")
+
 def getMacAddress(nic, name):
     global mac_dict
     print '%s exists => %s' % (PUBLIC_MAC_FILE, os.path.exists(PUBLIC_MAC_FILE))
@@ -136,8 +140,9 @@ def getMacAddress(nic, name):
     if (nic == PUBLIC_BRIDGE and
         os.path.exists(PUBLIC_MAC_FILE) and name in mac_dict):
         mac = mac_dict[name]
+        print 'Use %s for nic connected to %s' % (mac, nic)
     else:
-      mac = randomMAC("qemu")
+      mac = randomMAC()
     return mac
 
 def generateLibvirtXML(args, libvirt_xml):
@@ -172,25 +177,29 @@ def deleteLibvirtXML(libvirt_xml):
 
 #------------------------------------------------------------
 
-checkUser()
-loadMacAddress()
+def main():
+    checkUser()
+    loadMacAddress()
 
-args = parseArgs()
+    args = parseArgs()
 
-base_path = args.BASEIMAGE
-dest_path = args.NAME + ".img"
-#libvirt_xml = args.NAME + ".xml"
-libvirt_xml = getTempFile()
+    base_path = args.BASEIMAGE
+    dest_path = args.NAME + ".img"
+    #libvirt_xml = args.NAME + ".xml"
+    libvirt_xml = getTempFile()
 
-checkImage(dest_path)
-checkDomain(args.NAME)
-checkBaseImage(base_path)
+    checkImage(dest_path)
+    checkDomain(args.NAME)
+    checkBaseImage(base_path)
 
-generateLibvirtXML(args, libvirt_xml)
-defineDomain(libvirt_xml)
-copyImage(base_path, dest_path)
-setHostnameToImage(dest_path, args.NAME)
-deleteLibvirtXML(libvirt_xml)
+    generateLibvirtXML(args, libvirt_xml)
+    defineDomain(libvirt_xml)
+    copyImage(base_path, dest_path)
+    setHostnameToImage(dest_path, args.NAME)
+    deleteLibvirtXML(libvirt_xml)
 
-if not args.nostart:
-    startDomain(args.NAME)
+    if not args.nostart:
+        startDomain(args.NAME)
+
+if __name__ == '__main__':
+    main()
