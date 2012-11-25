@@ -33,20 +33,20 @@
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
     </controller>
 {% for nic in nics %}
-{% if nic['nic'] == 'NAT' %}
+{% if nic['network'] == 'NAT' %}
     <interface type='network'>
-      <mac address='{{nic['mac']}}'/>
       <source network='default'/>
-      <model type='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='{{nic['slot']}}' function='0x0'/>
-    </interface>
 {% else %}
     <interface type='bridge'>
+      <source bridge='{{nic['network']}}'/>
+{% endif %}
       <mac address='{{nic['mac']}}'/>
-      <source bridge='{{nic['nic']}}'/>
+      <model type='virtio'/>
+{% if nic['targetdev'] %}
+      <target dev='{{nic['targetdev']}}'/>
+{% endif %}
       <address type='pci' domain='0x0000' bus='0x00' slot='{{nic['slot']}}' function='0x0'/>
     </interface>
-{% endif %}
 {% endfor %}
     <serial type='pty'>
       <target port='0'/>

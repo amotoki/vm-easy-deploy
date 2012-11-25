@@ -101,8 +101,6 @@ def callVirshCmd(*args, **kwargs):
     return ret
 
 def listImages():
-    #print "ubuntu1204.img"
-    #print "ubuntu1104.img"
     for f in os.listdir(BASEIMAGE_DIR):
         print f
 
@@ -129,21 +127,30 @@ def loadMacAddress():
     if os.path.exists(PUBLIC_MAC_FILE):
         with open(PUBLIC_MAC_FILE) as f:
             mac_dict = json.load(f)
+            print 'Load mac_address file %s' % PUBLIC_MAC_FILE
 
 def randomMAC():
     return virtutils.randomMAC("qemu")
 
-def getMacAddress(nic, name):
+def getMacAddress(network, name):
     global mac_dict
-    print '%s exists => %s' % (PUBLIC_MAC_FILE, os.path.exists(PUBLIC_MAC_FILE))
-    print 'name in mac_dict %s' % (name in mac_dict)
-    if (nic == PUBLIC_BRIDGE and
+    if (network == PUBLIC_BRIDGE and
         os.path.exists(PUBLIC_MAC_FILE) and name in mac_dict):
         mac = mac_dict[name]
-        print 'Use %s for nic connected to %s' % (mac, nic)
+        print 'Use %s for nic connected to %s' % (mac, network)
     else:
       mac = randomMAC()
     return mac
+
+def getDeviceName(domname, index):
+    # from linux IF_NAMESIZE
+    # In recent Linux this is 16 (in older unix 14)
+    DEV_NAME_LEN = 16
+
+    devname = '%s-eth%s' % (domname, index)
+    if len(devname) > DEV_NAME_LEN:
+        devname = ''
+    return devname
 
 def generateLibvirtXML(args, libvirt_xml):
     params = { 'name': args.NAME,
@@ -152,10 +159,14 @@ def generateLibvirtXML(args, libvirt_xml):
     
     if len(args.nic) == 0:
         args.nic.append('NAT')
-    for i, nic in enumerate(args.nic):
-        mac = getMacAddress(nic, args.NAME)
+    for i, network in enumerate(args.nic):
+        mac = getMacAddress(network, args.NAME)
+        targetdev = getDeviceName(args.NAME, i)
         slot = '0x%02x' % (BASE_SLOT + i)
-        params['nics'].append({'nic': nic, 'mac': mac, 'slot': slot})
+        param = {'network': network, 'mac': mac, 'slot': slot}
+        if targetdev:
+            param['targetdev'] = targetdev
+        params['nics'].append(param)
     
     with open(args.template) as f:
         tmpl = Template(f.read())
@@ -163,9 +174,11 @@ def generateLibvirtXML(args, libvirt_xml):
     with open(libvirt_xml, 'w') as f:
         f.write(tmpl.render(params))
     
-    #print "%s generated successfully from %s" % (libvirt_xml, args.template)
     for m in params['nics']:
-        print "%s: %s" % (m['nic'], m['mac'])
+        msg = "%s: %s" % (m['network'], m['mac'])
+        if m.get('targetdev'):
+            msg += ' (%s)' % m['targetdev']
+        print msg
 
 def getTempFile():
     f = tempfile.NamedTemporaryFile(delete=False)
