@@ -196,10 +196,10 @@ def deleteLibvirtXML(libvirt_xml):
 #------------------------------------------------------------
 
 def main():
+    args = parseArgs()
+
     checkUser()
     loadMacAddress()
-
-    args = parseArgs()
 
     base_path = args.BASEIMAGE
     dest_path = args.NAME + ".img"
