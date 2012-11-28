@@ -47,12 +47,17 @@ def checkImage(image):
     if os.path.exists(image_path):
         print "%s exists." % image_path
         sys.exit(3)
+    return image_path
 
 def checkBaseImage(image):
-    image_path = os.path.join(BASEIMAGE_DIR, image)
+    if os.path.isabs(image):
+        image_path = image
+    else:
+        image_path = os.path.join(BASEIMAGE_DIR, image)
     if not os.path.exists(image_path):
         print "Base image %s does not exist." % image
         sys.exit(3)
+    return image_path
 
 def copyImage(base, image):
     src_path = os.path.join(BASEIMAGE_DIR, base)
@@ -201,14 +206,14 @@ def main():
     #libvirt_xml = args.NAME + ".xml"
     libvirt_xml = getTempFile()
 
-    checkImage(dest_path)
+    dest_abspath = checkImage(dest_path)
     checkDomain(args.NAME)
-    checkBaseImage(base_path)
+    base_abspath = checkBaseImage(base_path)
 
     generateLibvirtXML(args, libvirt_xml)
     defineDomain(libvirt_xml)
-    copyImage(base_path, dest_path)
-    setHostnameToImage(dest_path, args.NAME)
+    copyImage(base_abspath, dest_abspath)
+    setHostnameToImage(dest_abspath, args.NAME)
     deleteLibvirtXML(libvirt_xml)
 
     if not args.nostart:
