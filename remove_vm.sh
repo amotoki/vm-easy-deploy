@@ -6,10 +6,12 @@ FORCE=0
 export LANG=C
 export LC_ALL=C
 
-if [ `whoami` != "root" ]; then
-  echo "Please use 'sudo'. This command requires root priviledge."
-  exit 1
-fi
+BASEDIR=$(dirname $0)
+
+#if [ `whoami` != "root" ]; then
+#  echo "Please use 'sudo'. This command requires root priviledge."
+#  exit 1
+#fi
 
 if [ "$1" = "-f" ]; then
   FORCE=1
@@ -34,4 +36,4 @@ if [ $? -eq 0 ]; then
 fi
 
 virsh undefine $NAME
-rm -v ${IMAGE_DIR}/${NAME}.img
+sudo $BASEDIR/remove_image.sh $IMAGE_DIR ${NAME}.img

@@ -23,7 +23,9 @@ DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
-CMD_SET_VMNAME= os.path.join(BASEDIR, 'set-vm-name.sh')
+CMD_SET_VMNAME = os.path.join(BASEDIR, 'set-vm-name.sh')
+CMD_COPY_IMAGE = os.path.join(BASEDIR, 'copy_image.sh')
+CMD_CHECK_IMAGE = os.path.join(BASEDIR, 'check_image.sh')
 
 mac_dict = {}
 
@@ -44,7 +46,8 @@ def checkDomain(name):
 
 def checkImage(image):
     image_path = os.path.join(IMAGE_DIR, image)
-    if os.path.exists(image_path):
+    ret = callCmdAsRoot(CMD_CHECK_IMAGE, IMAGE_DIR, image, suppress=True)
+    if not ret:
         print "%s exists." % image_path
         sys.exit(3)
     return image_path
@@ -62,22 +65,20 @@ def checkBaseImage(image):
 def copyImage(base, image):
     src_path = os.path.join(BASEIMAGE_DIR, base)
     dst_path = os.path.join(IMAGE_DIR, image)
-    shutil.copyfile(src_path, dst_path)
+    print 'Copying %s -> %s...' % (os.path.basename(base),
+                                   os.path.basename(image))
+    callCmdAsRoot(CMD_COPY_IMAGE, src_path, dst_path, direct_stderr=True)
 
 def setHostnameToImage(image, name):
+    print 'Setting Hostname to the image...'
     dst_path = os.path.join(IMAGE_DIR, image)
-    subproc_args = { 'stdin': subprocess.PIPE,
-                     'stdout': subprocess.PIPE,
-                     'stderr': subprocess.PIPE,
-                     'close_fds': True, }
     cmd = '%s %s %s' % (CMD_SET_VMNAME, dst_path, name)
     args = cmd.split()
-    p = subprocess.Popen(args, **subproc_args)
-    ret = p.wait()
+    ret = callCmdAsRoot(*args)
     if ret:
-        print p.stdout.read()
-        print p.stderr.read()
+        print "setHostnameToImage failed (%s, %s)" % (image, name)
         sys.exit(5)
+    print 'Done'
 
 def defineDomain(xml):
     ret = callVirshCmd('define', xml)
@@ -88,22 +89,36 @@ def startDomain(name):
     ret = callVirshCmd('start', name)
     if ret:
         sys.exit(6)
+    print 'Start VM %s' % name
 
-def callVirshCmd(*args, **kwargs):
+def callCmd(*args, **kwargs):
     suppress = kwargs.get('suppress')
+    if kwargs.get('direct_stderr'):
+        stderr_dst = subprocess.STDOUT
+    else:
+        stderr_dst = subprocess.PIPE
     subproc_args = { 'stdin': subprocess.PIPE,
                      'stdout': subprocess.PIPE,
-                     'stderr': subprocess.PIPE,
+                     #'stderr': subprocess.PIPE,
+                     'stderr': stderr_dst,
                      'close_fds': True, }
-    args = ('virsh',) + args
     p = subprocess.Popen(args, **subproc_args)
     ret = p.wait()
     stdout = p.stdout.read()
-    stderr = p.stderr.read()
+    if 'direct_stderr' not in kwargs:
+        stderr = p.stderr.read()
     if ret and not suppress:
         print stdout
         print stderr
     return ret
+
+def callCmdAsRoot(*args, **kwargs):
+    args = ('sudo',) + args
+    return callCmd(*args, **kwargs)
+
+def callVirshCmd(*args, **kwargs):
+    args = ('virsh',) + args
+    return callCmd(*args, **kwargs)
 
 def listImages():
     for f in os.listdir(BASEIMAGE_DIR):
@@ -198,7 +213,7 @@ def deleteLibvirtXML(libvirt_xml):
 def main():
     args = parseArgs()
 
-    checkUser()
+    #checkUser()
     loadMacAddress()
 
     base_path = args.BASEIMAGE
