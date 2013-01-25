@@ -7,6 +7,7 @@ export LANG=C
 export LC_ALL=C
 
 BASEDIR=$(dirname $0)
+RM_IMAGE=${BASEDIR}/subcmds/remove_image.sh
 
 #if [ `whoami` != "root" ]; then
 #  echo "Please use 'sudo'. This command requires root priviledge."
@@ -36,4 +37,4 @@ if [ $? -eq 0 ]; then
 fi
 
 virsh undefine $NAME
-sudo $BASEDIR/remove_image.sh $IMAGE_DIR ${NAME}.img
+sudo $RM_IMAGE $IMAGE_DIR ${NAME}.img

@@ -23,9 +23,9 @@ DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
-CMD_SET_VMNAME = os.path.join(BASEDIR, 'set-vm-name.sh')
-CMD_COPY_IMAGE = os.path.join(BASEDIR, 'copy_image.sh')
-CMD_CHECK_IMAGE = os.path.join(BASEDIR, 'check_image.sh')
+CMD_SET_VMNAME = os.path.join(BASEDIR, 'subcmds', 'set-vm-name.sh')
+CMD_COPY_IMAGE = os.path.join(BASEDIR, 'subcmds', 'copy_image.sh')
+CMD_CHECK_IMAGE = os.path.join(BASEDIR, 'subcmds', 'check_image.sh')
 
 mac_dict = {}
 
