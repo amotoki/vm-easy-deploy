@@ -1,0 +1,4 @@
+%easydep ALL=(root) NOPASSWD: /usr/local/share/libvirt/set-vm-name.sh /var/lib/libvirt/images/*.img *
+%easydep ALL=(root) NOPASSWD: /usr/local/share/libvirt/copy_image.sh /usr/local/share/libvirt/images/*.img /var/lib/libvirt/images/*.img
+%easydep ALL=(root) NOPASSWD: /usr/local/share/libvirt/remove_image.sh /var/lib/libvirt/images *.img
+%easydep ALL=(root) NOPASSWD: /usr/local/share/libvirt/check_image.sh /var/lib/libvirt/images *.img
