@@ -1,0 +1,58 @@
+# -*- mode: bash -*-
+_vmlist=$(LC_ALL=C virsh list --all | grep -E '(running|shut off)' | awk '{print $2;}')
+_remove_vm_opts="-f"
+
+_imagelist=$(ls -1 /usr/local/share/libvirt/images | grep '.*.img')
+_reghosts=$(cat mac.json | python -mjson.tool | awk '{print $1;}' | grep : | cut -d '"' -f 2)
+_bridges=$(LC_ALL=C brctl show | grep -v 'bridge name' | grep -E '^\S' | awk '{print $1;}')
+_easy_deploy_opts="-i --nostart"
+
+function _easy_deploy()
+{
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  prev2="${COMP_WORDS[COMP_CWORD-2]}"
+
+  if [[ "$prev" = "-i" ]]; then
+    COMPREPLY=($(compgen -W "${_bridges}" $cur))
+  else
+    COMPREPLY=($(compgen -W "${_easy_deploy_opts} ${_imagelist} ${_reghosts}" $cur))
+  fi
+  return 0
+}
+
+#_tipica()
+#{
+#  COMPREPLY=()
+#  cur="${COMP_WORDS[COMP_CWORD]}"
+#  prev="${COMP_WORDS[COMP_CWORD-1]}"
+#  prev2="${COMP_WORDS[COMP_CWORD-2]}"
+#
+#  if [[ "$prev" = "tipica" ]]; then
+#    COMPREPLY=($(compgen -W "${_hosts}" $cur))
+#    #COMPREPLY=($(compgen -A hostname $cur))
+#  elif [[ "$prev2" = "tipica" ]]; then
+#    COMPREPLY=($(compgen -W "${_subcmds}" $cur))
+#  elif [[ "$prev" = "pxe" ]]; then
+#    COMPREPLY=($(compgen -W "${_pxe_opts}" $cur))
+#  fi
+#  return 0
+#}
+function _remove_vm()
+{
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  prev2="${COMP_WORDS[COMP_CWORD-2]}"
+
+  if [[ "$prev" = "remove_vm.sh" ]]; then
+    COMPREPLY=($(compgen -W "${_vmlist} ${_opts}" $cur))
+  elif [[ "$prev" = "-f" ]]; then
+    COMPREPLY=($(compgen -W "${_vmlist}" $cur))
+  fi
+  return 0
+}
+
+complete -F _easy_deploy easy_deploy.py
+complete -F _remove_vm remove_vm.sh
