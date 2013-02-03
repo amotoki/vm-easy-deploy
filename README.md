@@ -4,7 +4,7 @@ vm-easy-deploy
 Template-based VM deployment tool on a VM environment using libvirt.
 
 This tool is intended to use on a single host.
-If you want tools like this, I recomment to use IaaS stack such as OpenStack.
+If you want similar tools for multi host environment, I recommend to use IaaS stack such as OpenStack.
 
 ## Prerequites
 
