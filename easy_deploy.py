@@ -20,6 +20,7 @@ PUBLIC_BRIDGE = 'br0'
 PUBLIC_MAC_FILE = os.path.join(BASEDIR, 'mac.json')
 
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
+DEFAULT_NUM_CPU = 2
 DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
@@ -130,6 +131,7 @@ def parseArgs():
     parser.add_argument('BASEIMAGE', help='baseimage name or LIST (which lists available baseimages)')
     parser.add_argument('-t', '--template', help='template file', default=DEFAULT_TEMPLATE)
     parser.add_argument('--nostart', action='store_true', help='Do not start after define')
+    parser.add_argument('-c', '--cpu', help='number of vcpus', default=DEFAULT_NUM_CPU)
     parser.add_argument('-m', '--memory', help='memory size [KB]', default=DEFAULT_MEMORY)
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
@@ -174,6 +176,7 @@ def getDeviceName(domname, index):
 
 def generateLibvirtXML(args, libvirt_xml):
     params = { 'name': args.NAME,
+               'cpu': args.cpu,
                'memory': args.memory,
                'nics': [] }
     

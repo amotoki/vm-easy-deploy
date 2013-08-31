@@ -1,7 +1,7 @@
 <domain type='kvm'>
   <name>{{name}}</name>
   <memory>{{memory}}</memory>
-  <vcpu>1</vcpu>
+  <vcpu>{{cpu}}</vcpu>
   <os>
     <type arch='x86_64' machine='pc-1.0'>hvm</type>
     <boot dev='hd'/>
