@@ -21,7 +21,7 @@ PUBLIC_MAC_FILE = os.path.join(BASEDIR, 'mac.json')
 
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_NUM_CPU = 2
-DEFAULT_MEMORY = 4 * 1024 * 1024 # KB
+DEFAULT_MEMORY = 4 * 1024 * 1024  # KB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
 CMD_SET_VMNAME = os.path.join(BASEDIR, 'subcmds', 'set-vm-name.sh')
@@ -30,20 +30,24 @@ CMD_CHECK_IMAGE = os.path.join(BASEDIR, 'subcmds', 'check_image.sh')
 
 mac_dict = {}
 
+
 def usage():
     print "Usage: %s name template" % sys.argv[0]
     sys.exit(1)
+
 
 def checkUser():
     if getpass.getuser() != 'root':
         print "Please use 'sudo'. This command requires root priviledge."
         sys.exit(1)
 
+
 def checkDomain(name):
     ret = callVirshCmd('domstate', name, suppress=True)
     if ret == 0:
         print "%s is already defined." % name
         sys.exit(2)
+
 
 def checkImage(image):
     image_path = os.path.join(IMAGE_DIR, image)
@@ -52,6 +56,7 @@ def checkImage(image):
         print "%s exists." % image_path
         sys.exit(3)
     return image_path
+
 
 def checkBaseImage(image):
     if os.path.isabs(image):
@@ -63,12 +68,14 @@ def checkBaseImage(image):
         sys.exit(3)
     return image_path
 
+
 def copyImage(base, image):
     src_path = os.path.join(BASEIMAGE_DIR, base)
     dst_path = os.path.join(IMAGE_DIR, image)
     print 'Copying %s -> %s...' % (os.path.basename(base),
                                    os.path.basename(image))
     callCmdAsRoot(CMD_COPY_IMAGE, src_path, dst_path, direct_stderr=True)
+
 
 def setHostnameToImage(image, name):
     print 'Setting Hostname to the image...'
@@ -81,10 +88,12 @@ def setHostnameToImage(image, name):
         sys.exit(5)
     print 'Done'
 
+
 def defineDomain(xml):
     ret = callVirshCmd('define', xml)
     if ret:
         sys.exit(4)
+
 
 def startDomain(name):
     ret = callVirshCmd('start', name)
@@ -92,17 +101,17 @@ def startDomain(name):
         sys.exit(6)
     print 'Start VM %s' % name
 
+
 def callCmd(*args, **kwargs):
     suppress = kwargs.get('suppress')
     if kwargs.get('direct_stderr'):
         stderr_dst = subprocess.STDOUT
     else:
         stderr_dst = subprocess.PIPE
-    subproc_args = { 'stdin': subprocess.PIPE,
-                     'stdout': subprocess.PIPE,
-                     #'stderr': subprocess.PIPE,
-                     'stderr': stderr_dst,
-                     'close_fds': True, }
+    subproc_args = {'stdin': subprocess.PIPE,
+                    'stdout': subprocess.PIPE,
+                    'stderr': stderr_dst,
+                    'close_fds': True, }
     p = subprocess.Popen(args, **subproc_args)
     ret = p.wait()
     stdout = p.stdout.read()
@@ -113,26 +122,36 @@ def callCmd(*args, **kwargs):
         print stderr
     return ret
 
+
 def callCmdAsRoot(*args, **kwargs):
     args = ('sudo',) + args
     return callCmd(*args, **kwargs)
+
 
 def callVirshCmd(*args, **kwargs):
     args = ('virsh',) + args
     return callCmd(*args, **kwargs)
 
+
 def listImages():
     for f in os.listdir(BASEIMAGE_DIR):
         print f
 
+
 def parseArgs():
     parser = argparse.ArgumentParser(description='VM easy deployment tool')
     parser.add_argument('NAME', help='VM name to be defined')
-    parser.add_argument('BASEIMAGE', help='baseimage name or LIST (which lists available baseimages)')
-    parser.add_argument('-t', '--template', help='template file', default=DEFAULT_TEMPLATE)
-    parser.add_argument('--nostart', action='store_true', help='Do not start after define')
-    parser.add_argument('-c', '--cpu', help='number of vcpus', default=DEFAULT_NUM_CPU)
-    parser.add_argument('-m', '--memory', help='memory size [KB]', default=DEFAULT_MEMORY)
+    parser.add_argument('BASEIMAGE',
+                        help=('baseimage name or LIST '
+                              '(which lists available baseimages)'))
+    parser.add_argument('-t', '--template', help='template file',
+                        default=DEFAULT_TEMPLATE)
+    parser.add_argument('--nostart', action='store_true',
+                        help='Do not start after define')
+    parser.add_argument('-c', '--cpu', help='number of vcpus',
+                        default=DEFAULT_NUM_CPU)
+    parser.add_argument('-m', '--memory', help='memory size [KB]',
+                        default=DEFAULT_MEMORY)
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
                         ' Specify multiple times if you want multiple vNICs.')
@@ -144,6 +163,7 @@ def parseArgs():
 
     return args
 
+
 def loadMacAddress():
     global mac_dict
     if os.path.exists(PUBLIC_MAC_FILE):
@@ -151,8 +171,10 @@ def loadMacAddress():
             mac_dict = json.load(f)
             print 'Load mac_address file %s' % PUBLIC_MAC_FILE
 
+
 def randomMAC():
     return virtutils.randomMAC("qemu")
+
 
 def getMacAddress(network, name):
     global mac_dict
@@ -161,8 +183,9 @@ def getMacAddress(network, name):
         mac = mac_dict[name]
         print 'Use %s for nic connected to %s' % (mac, network)
     else:
-      mac = randomMAC()
+        mac = randomMAC()
     return mac
+
 
 def getDeviceName(domname, index):
     # from linux IF_NAMESIZE
@@ -174,12 +197,14 @@ def getDeviceName(domname, index):
         devname = ''
     return devname
 
+
 def generateLibvirtXML(args, libvirt_xml):
-    params = { 'name': args.NAME,
-               'cpu': args.cpu,
-               'memory': args.memory,
-               'nics': [] }
-    
+    params = {'name': args.NAME,
+              'cpu': args.cpu,
+              'memory': args.memory,
+              'nics': [],
+             }
+
     if len(args.nic) == 0:
         args.nic.append('NAT')
     for i, network in enumerate(args.nic):
@@ -190,28 +215,29 @@ def generateLibvirtXML(args, libvirt_xml):
         if targetdev:
             param['targetdev'] = targetdev
         params['nics'].append(param)
-    
+
     with open(args.template) as f:
         tmpl = Template(f.read())
-    
+
     with open(libvirt_xml, 'w') as f:
         f.write(tmpl.render(params))
-    
+
     for m in params['nics']:
         msg = "%s: %s" % (m['network'], m['mac'])
         if m.get('targetdev'):
             msg += ' (%s)' % m['targetdev']
         print msg
 
+
 def getTempFile():
     f = tempfile.NamedTemporaryFile(delete=False)
     f.close()
     return f.name
 
+
 def deleteLibvirtXML(libvirt_xml):
     os.remove(libvirt_xml)
 
-#------------------------------------------------------------
 
 def main():
     args = parseArgs()
