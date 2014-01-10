@@ -15,9 +15,10 @@ BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
 
 # bridge interface directly connected to the Internet (or your intranet)
-PUBLIC_BRIDGE = 'br0'
+PUBLIC_BRIDGE = os.environ.get('EASY_DEPLOY_PUBLIC_BRIDGE', 'br0')
 # mac address list of public hosts
-PUBLIC_MAC_FILE = os.path.join(BASEDIR, 'mac.json')
+PUBLIC_MAC_FILE = os.environ.get('EASY_DEPLOY_MAC_FILE',
+                                 os.path.join(BASEDIR, 'mac.json'))
 
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_NUM_CPU = 2
