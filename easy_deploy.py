@@ -69,6 +69,17 @@ def checkBaseImage(image):
     return image_path
 
 
+def getImageFormat(image):
+    output = callCmd('qemu-img', 'info', image, capture=True)
+    fmtlines = [line for line in output.split('\n') if line.startswith('file format')]
+    if fmtlines:
+        fmt = fmtlines[0]
+    else:
+        print "Image format for %s is unknown." % image
+        sys.exit(3)
+    return fmt.split(': ')[1]
+
+
 def copyImage(base, image):
     src_path = os.path.join(BASEIMAGE_DIR, base)
     dst_path = os.path.join(IMAGE_DIR, image)
@@ -120,7 +131,12 @@ def callCmd(*args, **kwargs):
     if ret and not suppress:
         print stdout
         print stderr
-    return ret
+    if kwargs.get('capture'):
+        if ret:
+            raise RuntimeError(ret)
+        return stdout
+    else:
+        return ret
 
 
 def callCmdAsRoot(*args, **kwargs):
@@ -208,6 +224,7 @@ def generateLibvirtXML(args, libvirt_xml):
               'cpu': args.cpu,
               'memory': args.memory * 1024 * 1024,
               'nics': [],
+              'format': args.fmt,
              }
 
     if len(args.nic) == 0:
@@ -258,11 +275,13 @@ def main():
     dest_abspath = checkImage(dest_path)
     checkDomain(args.NAME)
     base_abspath = checkBaseImage(base_path)
+    image_fmt = getImageFormat(base_abspath)
+    args.fmt = image_fmt
 
     generateLibvirtXML(args, libvirt_xml)
     defineDomain(libvirt_xml)
     copyImage(base_abspath, dest_abspath)
-    if args.set_hostname:
+    if args.set_hostname and image_fmt != 'raw':
         setHostnameToImage(dest_abspath, args.NAME)
     deleteLibvirtXML(libvirt_xml)
 

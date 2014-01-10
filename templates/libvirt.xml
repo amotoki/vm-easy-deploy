@@ -18,7 +18,7 @@
   <devices>
     <emulator>/usr/bin/kvm</emulator>
     <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
+      <driver name='qemu' type='{{format}}'/>
       <source file='/var/lib/libvirt/images/{{name}}.img'/>
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
