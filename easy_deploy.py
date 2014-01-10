@@ -134,7 +134,9 @@ def callVirshCmd(*args, **kwargs):
 
 
 def listImages():
-    for f in os.listdir(BASEIMAGE_DIR):
+    for f in sorted(os.listdir(BASEIMAGE_DIR)):
+        if f.startswith('.'):
+            continue
         print f
 
 
