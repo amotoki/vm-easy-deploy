@@ -157,6 +157,9 @@ def parseArgs():
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
                         ' Specify multiple times if you want multiple vNICs.')
+    parser.add_argument('--no-hostname', action='store_false',
+                        dest='set_hostname',
+                        help='Do not set hostname of VM.')
     args = parser.parse_args()
 
     if args.BASEIMAGE == '?' or args.BASEIMAGE.upper() == 'LIST':
@@ -259,7 +262,8 @@ def main():
     generateLibvirtXML(args, libvirt_xml)
     defineDomain(libvirt_xml)
     copyImage(base_abspath, dest_abspath)
-    setHostnameToImage(dest_abspath, args.NAME)
+    if args.set_hostname:
+        setHostnameToImage(dest_abspath, args.NAME)
     deleteLibvirtXML(libvirt_xml)
 
     if not args.nostart:
