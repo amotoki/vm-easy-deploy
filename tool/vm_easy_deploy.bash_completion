@@ -1,9 +1,12 @@
 # -*- mode: bash -*-
+
+MAC_JSON=${EASY_DEPLOY_MAC_FILE:-/usr/local/share/libvirt/mac.json}
+
 _vmlist=$(LC_ALL=C virsh list --all | grep -E '(running|shut off)' | awk '{print $2;}')
 _remove_vm_opts="-f"
 
 _imagelist=$(ls -1 /usr/local/share/libvirt/images | grep '.*.img')
-_reghosts=$(cat mac.json | python -mjson.tool | awk '{print $1;}' | grep : | cut -d '"' -f 2)
+_reghosts=$(cat $MAC_JSON | python -mjson.tool | awk '{print $1;}' | grep : | cut -d '"' -f 2)
 _bridges=$(LC_ALL=C brctl show | grep -v 'bridge name' | grep -E '^\S' | awk '{print $1;}')
 _easy_deploy_opts="-i --nostart"
 
