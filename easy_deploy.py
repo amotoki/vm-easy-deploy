@@ -21,7 +21,7 @@ PUBLIC_MAC_FILE = os.path.join(BASEDIR, 'mac.json')
 
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_NUM_CPU = 2
-DEFAULT_MEMORY = 4 * 1024 * 1024  # KB
+DEFAULT_MEMORY = 4  # GB
 BASE_SLOT = 0x07
 BASEIMAGE_DIR = os.path.join(BASEDIR, 'images')
 CMD_SET_VMNAME = os.path.join(BASEDIR, 'subcmds', 'set-vm-name.sh')
@@ -150,9 +150,9 @@ def parseArgs():
                         default=DEFAULT_TEMPLATE)
     parser.add_argument('--nostart', action='store_true',
                         help='Do not start after define')
-    parser.add_argument('-c', '--cpu', help='number of vcpus',
+    parser.add_argument('-c', '--cpu', help='number of vcpus', type=int,
                         default=DEFAULT_NUM_CPU)
-    parser.add_argument('-m', '--memory', help='memory size [KB]',
+    parser.add_argument('-m', '--memory', help='memory size [GB]', type=int,
                         default=DEFAULT_MEMORY)
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
@@ -206,7 +206,7 @@ def getDeviceName(domname, index):
 def generateLibvirtXML(args, libvirt_xml):
     params = {'name': args.NAME,
               'cpu': args.cpu,
-              'memory': args.memory,
+              'memory': args.memory * 1024 * 1024,
               'nics': [],
              }
 
