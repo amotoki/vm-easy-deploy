@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import ConfigParser
 import getpass
 from jinja2 import Template
 import json
@@ -196,6 +197,27 @@ def parseArgs():
     return args
 
 
+def loadConfig():
+    global mac_dict
+    conf_file = os.path.join(os.environ.get('HOME'), '.easydeployrc')
+    conf = ConfigParser.SafeConfigParser()
+    conf.read(conf_file)
+    if conf.has_section('mac'):
+        mac_dict.update(dict(conf.items('mac')))
+    if conf.has_section('alias'):
+        alias_dict = dict(conf.items('alias'))
+        for alias, name in alias_dict.items():
+            if name in mac_dict:
+                mac_dict[alias] = mac_dict[name]
+            else:
+                print ('Alias "%(alias)s" has no corresponding '
+                       'entry "%(name)s"') % locals()
+    if conf.has_section('default'):
+        if conf.has_option('default', 'public_bridge'):
+            global PUBLIC_BRIDGE
+            PUBLIC_BRIDGE = conf.get('default', 'public_bridge')
+
+
 def loadMacAddress():
     global mac_dict
     if os.path.exists(PUBLIC_MAC_FILE):
@@ -230,12 +252,12 @@ def randomMAC():
 
 def getMacAddress(network, name):
     global mac_dict
-    if (network == PUBLIC_BRIDGE and
-        os.path.exists(PUBLIC_MAC_FILE) and name in mac_dict):
+    if (network == PUBLIC_BRIDGE and name in mac_dict):
         mac = mac_dict[name]
         print 'Use %s for nic connected to %s' % (mac, network)
     else:
         mac = randomMAC()
+        print 'Generate random MAC address %s for network %s' % (mac, network)
     return mac
 
 
@@ -293,6 +315,7 @@ def deleteLibvirtXML(libvirt_xml):
 
 
 def main():
+    loadConfig()
     args = parseArgs()
 
     #checkUser()

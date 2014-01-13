@@ -1,0 +1,11 @@
+[default]
+public_bridge = br0
+
+[mac]
+dev01 = 52:54:00:1f:c6:57
+dev02 = 52:54:00:ee:7b:07
+dev03 = 52:54:00:f2:57:0e
+
+[alias]
+cacheserver = dev02
+testserver = dev03
