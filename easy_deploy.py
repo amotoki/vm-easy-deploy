@@ -19,6 +19,7 @@ PUBLIC_BRIDGE = os.environ.get('EASY_DEPLOY_PUBLIC_BRIDGE', 'br0')
 # mac address list of public hosts
 PUBLIC_MAC_FILE = os.environ.get('EASY_DEPLOY_MAC_FILE',
                                  os.path.join(BASEDIR, 'mac.json'))
+ALIAS_FILE = os.environ.get('EASY_DEPLOY_ALIAS_FILE', '')
 
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_NUM_CPU = 2
@@ -43,11 +44,20 @@ def checkUser():
         sys.exit(1)
 
 
-def checkDomain(name):
+def checkDomainOne(name, alias=False):
     ret = callVirshCmd('domstate', name, suppress=True)
     if ret == 0:
+        if alias:
+            name = 'Alias "%s"' % name
         print "%s is already defined." % name
         sys.exit(2)
+
+
+def checkDomain(name):
+    checkDomainOne(name)
+    aliases = getAliasNames(name)
+    for n in aliases:
+        checkDomainOne(n, alias=True)
 
 
 def checkImage(image):
@@ -189,9 +199,29 @@ def parseArgs():
 def loadMacAddress():
     global mac_dict
     if os.path.exists(PUBLIC_MAC_FILE):
+        print 'Loading mac_address file %s' % PUBLIC_MAC_FILE
         with open(PUBLIC_MAC_FILE) as f:
             mac_dict = json.load(f)
-            print 'Load mac_address file %s' % PUBLIC_MAC_FILE
+    # Alias
+    if os.path.exists(ALIAS_FILE):
+        print 'Loading alias file %s' % ALIAS_FILE
+        with open(ALIAS_FILE) as f:
+            alias_dict = json.load(f)
+        for alias, name in alias_dict.items():
+            if name in mac_dict:
+                mac_dict[alias] = mac_dict[name]
+            else:
+                print ('Alias "%(alias)s" has no corresponding '
+                       'entry "%(name)s"') % locals()
+
+
+def getAliasNames(name):
+    global mac_dict
+    if name not in mac_dict:
+        return []
+    mac = mac_dict[name]
+    return [k for k, v in mac_dict.items()
+            if v == mac and k != name]
 
 
 def randomMAC():
