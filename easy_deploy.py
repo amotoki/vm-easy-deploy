@@ -16,12 +16,10 @@ BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
 
 # bridge interface directly connected to the Internet (or your intranet)
-PUBLIC_BRIDGE = os.environ.get('EASY_DEPLOY_PUBLIC_BRIDGE', 'br0')
-# mac address list of public hosts
-PUBLIC_MAC_FILE = os.environ.get('EASY_DEPLOY_MAC_FILE',
-                                 os.path.join(BASEDIR, 'mac.json'))
-ALIAS_FILE = os.environ.get('EASY_DEPLOY_ALIAS_FILE', '')
+# It can be configured by the config file
+PUBLIC_BRIDGE = 'br0'
 
+CONFIG_FILE_NAME = '.easydeployrc'
 DEFAULT_TEMPLATE = os.path.join(BASEDIR, 'templates/libvirt.xml')
 DEFAULT_NUM_CPU = 2
 DEFAULT_MEMORY = 4  # GB
@@ -199,7 +197,7 @@ def parseArgs():
 
 def loadConfig():
     global mac_dict
-    conf_file = os.path.join(os.environ.get('HOME'), '.easydeployrc')
+    conf_file = os.path.join(os.environ.get('HOME'), CONFIG_FILE_NAME)
     conf = ConfigParser.SafeConfigParser()
     conf.read(conf_file)
     if conf.has_section('mac'):
@@ -216,25 +214,6 @@ def loadConfig():
         if conf.has_option('default', 'public_bridge'):
             global PUBLIC_BRIDGE
             PUBLIC_BRIDGE = conf.get('default', 'public_bridge')
-
-
-def loadMacAddress():
-    global mac_dict
-    if os.path.exists(PUBLIC_MAC_FILE):
-        print 'Loading mac_address file %s' % PUBLIC_MAC_FILE
-        with open(PUBLIC_MAC_FILE) as f:
-            mac_dict = json.load(f)
-    # Alias
-    if os.path.exists(ALIAS_FILE):
-        print 'Loading alias file %s' % ALIAS_FILE
-        with open(ALIAS_FILE) as f:
-            alias_dict = json.load(f)
-        for alias, name in alias_dict.items():
-            if name in mac_dict:
-                mac_dict[alias] = mac_dict[name]
-            else:
-                print ('Alias "%(alias)s" has no corresponding '
-                       'entry "%(name)s"') % locals()
 
 
 def getAliasNames(name):
@@ -319,7 +298,6 @@ def main():
     args = parseArgs()
 
     #checkUser()
-    loadMacAddress()
 
     base_path = args.BASEIMAGE
     dest_path = args.NAME + ".img"
