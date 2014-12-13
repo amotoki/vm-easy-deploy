@@ -5,12 +5,11 @@ import getpass
 from jinja2 import Template
 import json
 import os
+import random
 import shutil
 import sys
 import subprocess
 import tempfile
-from virtinst import util as virtutils
-from virtinst.util import randomMAC
 
 BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
@@ -226,7 +225,14 @@ def getAliasNames(name):
 
 
 def randomMAC():
-    return virtutils.randomMAC("qemu")
+    # oui = [ 0x00, 0x16, 0x3E ]  # xen
+    oui = [ 0x52, 0x54, 0x00 ]  # qemu
+
+    mac = oui + [
+            random.randint(0x00, 0xff),
+            random.randint(0x00, 0xff),
+            random.randint(0x00, 0xff)]
+    return ':'.join(map(lambda x: "%02x" % x, mac))
 
 
 def getMacAddress(network, name):
