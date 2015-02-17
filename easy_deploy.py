@@ -235,14 +235,35 @@ def randomMAC():
     return ':'.join(map(lambda x: "%02x" % x, mac))
 
 
-def getMacAddress(network, name):
+def getNetwork(network):
+    if network.lower() == 'NAT':
+        return 'NAT', 'default'
+    elif network.lower().startswith('pub'):
+        return 'PUBLIC', PUBLIC_BRIDGE
+
+    if ':' in network:
+        net_type, net_name = network.split(':', 1)
+        net_type = net_type.lower()
+    else:
+        net_type = 'net'
+        net_name = network
+    if net_type == 'br':
+        return 'BRIDGE', net_name
+    elif net_type == 'net':
+        return 'NETWORK', net_name
+    else:
+        print 'Unknow network_type.'
+        sys.exit(4)
+
+
+def getMacAddress(net_type, net_name, name):
     global mac_dict
-    if (network == PUBLIC_BRIDGE and name in mac_dict):
+    if (net_type == 'PUBLIC' and name in mac_dict):
         mac = mac_dict[name]
-        print 'Use %s for nic connected to %s' % (mac, network)
+        print 'Use %s for nic connected to %s' % (mac, net_name)
     else:
         mac = randomMAC()
-        print 'Generate random MAC address %s for network %s' % (mac, network)
+        print 'Generate random MAC address %s for network %s' % (mac, net_name)
     return mac
 
 
@@ -268,10 +289,12 @@ def generateLibvirtXML(args, libvirt_xml):
     if len(args.nic) == 0:
         args.nic.append('NAT')
     for i, network in enumerate(args.nic):
-        mac = getMacAddress(network, args.NAME)
+        net_type, net_name = getNetwork(network)
+        mac = getMacAddress(net_type, net_name, args.NAME)
         targetdev = getDeviceName(args.NAME, i)
         slot = '0x%02x' % (BASE_SLOT + i)
-        param = {'network': network, 'mac': mac, 'slot': slot}
+        param = {'net_type': net_type, 'net_name': net_name,
+                  'mac': mac, 'slot': slot}
         if targetdev:
             param['targetdev'] = targetdev
         params['nics'].append(param)
@@ -283,7 +306,7 @@ def generateLibvirtXML(args, libvirt_xml):
         f.write(tmpl.render(params))
 
     for m in params['nics']:
-        msg = "%s: %s" % (m['network'], m['mac'])
+        msg = "%s(%s): %s" % (m['net_type'], m['net_name'], m['mac'])
         if m.get('targetdev'):
             msg += ' (%s)' % m['targetdev']
         print msg
