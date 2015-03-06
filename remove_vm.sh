@@ -1,6 +1,7 @@
 #!/bin/sh
 
 IMAGE_DIR=/var/lib/libvirt/images
+RAMDISK_DIR=/mnt/ramdisk/images
 FORCE=0
 
 export LANG=C
@@ -37,4 +38,4 @@ if [ $? -eq 0 ]; then
 fi
 
 virsh undefine $NAME
-sudo $RM_IMAGE $IMAGE_DIR ${NAME}.img
+sudo $RM_IMAGE $IMAGE_DIR ${NAME}.img $RAMDISK_DIR

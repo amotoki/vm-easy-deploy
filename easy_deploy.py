@@ -13,6 +13,7 @@ import tempfile
 
 BASEDIR = '/usr/local/share/libvirt'
 IMAGE_DIR = '/var/lib/libvirt/images'
+RAMDISK_DIR = ''
 
 # bridge interface directly connected to the Internet (or your intranet)
 # It can be configured by the config file
@@ -89,12 +90,19 @@ def getImageFormat(image):
     return fmt.split(': ')[1]
 
 
-def copyImage(base, image):
+def copyImage(base, image, use_ramdisk=False):
     src_path = os.path.join(BASEIMAGE_DIR, base)
     dst_path = os.path.join(IMAGE_DIR, image)
+    if use_ramdisk and RAMDISK_DIR:
+        ramdisk_dir = RAMDISK_DIR
+    else:
+        ramdisk_dir = ''
     print 'Copying %s -> %s...' % (os.path.basename(base),
                                    os.path.basename(image))
-    callCmdAsRoot(CMD_COPY_IMAGE, src_path, dst_path, direct_stderr=True)
+    if ramdisk_dir:
+        print '(using ramdisk dir %s)' % ramdisk_dir
+    callCmdAsRoot(CMD_COPY_IMAGE, src_path, dst_path, ramdisk_dir,
+                  direct_stderr=True)
 
 
 def setHostnameToImage(image, name):
@@ -182,9 +190,12 @@ def parseArgs():
     parser.add_argument('-i', '--nic', action='append', default=[],
                         help='NIC (bridge_name or "NAT").'
                         ' Specify multiple times if you want multiple vNICs.')
-    parser.add_argument('--no-hostname', action='store_false',
+    parser.add_argument('-H', '--no-hostname', action='store_false',
                         dest='set_hostname',
                         help='Do not set hostname of VM.')
+    parser.add_argument('-r', '--use-ramdisk', action='store_true',
+                        dest='use_ramdisk',
+                        help='Place VM image to ramdisk (if ramdisk is configured).')
     args = parser.parse_args()
 
     if args.BASEIMAGE == '?' or args.BASEIMAGE.upper() == 'LIST':
@@ -213,6 +224,9 @@ def loadConfig():
         if conf.has_option('default', 'public_bridge'):
             global PUBLIC_BRIDGE
             PUBLIC_BRIDGE = conf.get('default', 'public_bridge')
+        if conf.has_option('default', 'ramdisk_dir'):
+            global RAMDISK_DIR
+            RAMDISK_DIR = conf.get('default', 'ramdisk_dir')
 
 
 def getAliasNames(name):
@@ -341,7 +355,7 @@ def main():
 
     generateLibvirtXML(args, libvirt_xml)
     defineDomain(libvirt_xml)
-    copyImage(base_abspath, dest_abspath)
+    copyImage(base_abspath, dest_abspath, args.use_ramdisk)
     if args.set_hostname and image_fmt != 'raw':
         setHostnameToImage(dest_abspath, args.NAME)
     deleteLibvirtXML(libvirt_xml)
