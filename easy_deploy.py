@@ -250,7 +250,7 @@ def randomMAC():
 
 
 def getNetwork(network):
-    if network.lower() == 'NAT':
+    if network.upper() == 'NAT':
         return 'NAT', 'default'
     elif network.lower().startswith('pub'):
         return 'PUBLIC', PUBLIC_BRIDGE
